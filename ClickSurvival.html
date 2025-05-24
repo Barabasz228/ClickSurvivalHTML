@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Click Survival</title>
+  <style>
+    @font-face {
+      font-family: 'Minecraft';
+      src: url('https://fonts.cdnfonts.com/s/22010/MinecraftTen-VGORe.ttf');
+    }
+
+    body {
+      margin: 0;
+      background-color: #222;
+      font-family: 'Minecraft', sans-serif;
+      color: #fff;
+      text-align: center;
+    }
+
+    .menu, .game, .modes, .stats {
+      display: none;
+      margin-top: 50px;
+    }
+
+    .visible {
+      display: block;
+    }
+
+    .menu-buttons button {
+      display: block;
+      width: 200px;
+      margin: 10px auto;
+    }
+
+    button {
+      font-family: 'Minecraft', sans-serif;
+      font-size: 20px;
+      padding: 10px 20px;
+      cursor: pointer;
+      background-color: #444;
+      color: white;
+      border: 2px solid white;
+      border-radius: 8px;
+    }
+
+    button:disabled {
+      background-color: #777;
+      cursor: not-allowed;
+    }
+
+    #circle {
+      width: 150px;
+      height: 150px;
+      background-color: #f55;
+      border-radius: 50%;
+      line-height: 150px;
+      margin: 30px auto;
+      font-size: 18px;
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+    }
+
+    #circle span {
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="menu visible" id="menu">
+    <h1>Click Survival</h1>
+    <div class="menu-buttons">
+      <button id="playBtn" disabled>Play</button>
+      <button onclick="showModes()">Modes</button>
+      <button onclick="showStats()">Stats</button>
+    </div>
+    <p>Total Points: <span id="totalPoints">0</span></p>
+  </div>
+
+  <div class="modes" id="modes">
+    <h2>Select Mode</h2>
+    <button onclick="selectMode('Easy', 20, 1000, 1)">Easy</button>
+    <button onclick="selectMode('Medium', 30, 1000, 3)">Medium</button>
+    <button onclick="selectMode('Insane', 40, 2000, 6)">Insane</button>
+    <br><br>
+    <button onclick="backToMenu()">Back</button>
+  </div>
+
+  <div class="stats" id="stats">
+    <h2>Stats</h2>
+    <p>Highest Clicks: <span id="highestClicks">0</span></p>
+    <p>Total Wins: <span id="totalWins">0</span></p>
+    <br>
+    <button onclick="backToMenu()">Back</button>
+  </div>
+
+  <div class="game" id="game">
+    <h2 id="modeTitle">Mode</h2>
+    <p id="hp">100/100 HP</p>
+    <div id="circle" onclick="heal()"><span>Click to heal</span></div>
+    <p id="timeLeft">Time: 10s</p>
+    <button onclick="backToMenu()">Back</button>
+  </div>
+
+  <script>
+    let mode = null;
+    let damage = 0;
+    let interval = 1000;
+    let reward = 0;
+    let hp = 100;
+    let clicks = 0;
+    let timer = 10;
+    let gameLoop;
+    let totalPoints = parseInt(localStorage.getItem('totalPoints') || '0');
+
+    document.getElementById('totalPoints').innerText = totalPoints;
+
+    function showModes() {
+      document.getElementById('menu').classList.remove('visible');
+      document.getElementById('modes').classList.add('visible');
+    }
+
+    function showStats() {
+      document.getElementById('menu').classList.remove('visible');
+      document.getElementById('stats').classList.add('visible');
+      document.getElementById('highestClicks').innerText = localStorage.getItem('highestClicks') || '0';
+      document.getElementById('totalWins').innerText = localStorage.getItem('totalWins') || '0';
+    }
+
+    function backToMenu() {
+      document.querySelectorAll('.game, .modes, .stats').forEach(e => e.classList.remove('visible'));
+      document.getElementById('menu').classList.add('visible');
+      document.getElementById('totalPoints').innerText = totalPoints;
+    }
+
+    function selectMode(name, dmg, intv, pts) {
+      mode = name;
+      damage = dmg;
+      interval = intv;
+      reward = pts;
+      document.getElementById('playBtn').disabled = false;
+      backToMenu();
+    }
+
+    document.getElementById('playBtn').onclick = function() {
+      document.getElementById('menu').classList.remove('visible');
+      document.getElementById('game').classList.add('visible');
+      document.getElementById('modeTitle').innerText = mode;
+      startGame();
+    }
+
+    function startGame() {
+      hp = 100;
+      clicks = 0;
+      timer = 10;
+      updateHP();
+      updateTime();
+      gameLoop = setInterval(() => {
+        hp -= damage;
+        if (hp <= 0) hp = 0;
+        updateHP();
+        if (--timer <= 0 || hp <= 0) endGame();
+        updateTime();
+      }, interval);
+    }
+
+    function updateHP() {
+      document.getElementById('hp').innerText = hp + '/100 HP';
+    }
+
+    function updateTime() {
+      document.getElementById('timeLeft').innerText = 'Time: ' + timer + 's';
+    }
+
+    function heal() {
+      if (hp > 0 && timer > 0) {
+        hp += 5;
+        if (hp > 100) hp = 100;
+        clicks++;
+        updateHP();
+      }
+    }
+
+    function endGame() {
+      clearInterval(gameLoop);
+      if (hp > 0) {
+        alert('You survived! +'+reward+' point(s)');
+        let totalWins = parseInt(localStorage.getItem('totalWins') || '0') + 1;
+        localStorage.setItem('totalWins', totalWins);
+        totalPoints += reward;
+        localStorage.setItem('totalPoints', totalPoints);
+      } else {
+        alert('You died!');
+      }
+      let highestClicks = parseInt(localStorage.getItem('highestClicks') || '0');
+      if (clicks > highestClicks) {
+        localStorage.setItem('highestClicks', clicks);
+      }
+      backToMenu();
+    }
+  </script>
+</body>
+</html>
